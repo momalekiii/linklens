@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LinkLens — URL Threat Intelligence & Phishing Scanner for Telegram</title>
+  <meta name="description" content="Multi-engine URL security scanner, DOM phishing inspector, and Shaparak gateway verifier running on Telegram Serverless V8 isolates." />
+  <style>
+    :root {
+      --bg: #090a0f;
+      --surface: #11131a;
+      --border: #1f2430;
+      --text: #eceff4;
+      --muted: #8b949e;
+      --accent: #38bdf8;
+      --green: #3fb950;
+      --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+      --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      padding: 0 20px;
+    }
+
+    .container {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 64px 0 80px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 20px;
+      margin-bottom: 56px;
+    }
+
+    .brand {
+      font-family: var(--mono);
+      font-weight: 600;
+      font-size: 1rem;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 20px;
+      font-size: 0.875rem;
+    }
+
+    .nav-links a {
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+
+    .nav-links a:hover { color: var(--text); }
+
+    h1 {
+      font-size: clamp(2rem, 5vw, 2.75rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      margin-bottom: 18px;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 1.05rem;
+      max-width: 620px;
+      margin-bottom: 32px;
+    }
+
+    .cta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 56px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 11px 20px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: all 0.15s ease;
+    }
+
+    .btn-primary {
+      background: var(--text);
+      color: var(--bg);
+    }
+
+    .btn-primary:hover {
+      background: #ffffff;
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      border-color: var(--muted);
+    }
+
+    .terminal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      margin-bottom: 56px;
+      overflow-x: auto;
+    }
+
+    .terminal-header {
+      color: var(--muted);
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .t-line { margin: 4px 0; }
+    .t-muted { color: var(--muted); }
+    .t-ok { color: var(--green); }
+    .t-accent { color: var(--accent); }
+
+    .section-title {
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 56px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 18px;
+    }
+
+    .card h3 {
+      font-size: 0.95rem;
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+
+    .card p {
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    .audit-box {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 48px;
+      font-size: 0.875rem;
+      color: var(--muted);
+    }
+
+    .audit-box strong { color: var(--text); }
+    .audit-box code {
+      font-family: var(--mono);
+      color: var(--text);
+      background: var(--surface);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+    }
+
+    footer {
+      border-top: 1px solid var(--border);
+      padding-top: 24px;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      font-size: 0.8rem;
+      color: var(--muted);
+      font-family: var(--mono);
+    }
+
+    footer a {
+      color: var(--text);
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="brand">
+        <span class="status-dot"></span>
+        <span>LinkLens</span>
+      </div>
+      <nav class="nav-links">
+        <a href="https://github.com/momalekiii/LinkLens">Source Audit</a>
+        <a href="https://github.com/momalekiii/LinkLens/blob/main/SECURITY.md">Security</a>
+        <a href="https://t.me/linklenssbot">@linklenssbot ↗</a>
+      </nav>
+    </header>
+
+    <main>
+      <h1>URL threat intelligence, directly inside Telegram.</h1>
+      <p class="subtitle">
+        LinkLens inspects suspicious links, redirects, SSL certificates, and payment gateways across multi-engine threat feeds—running on isolated serverless V8 workers with zero external tracking.
+      </p>
+
+      <div class="cta-row">
+        <a class="btn btn-primary" href="https://t.me/linklenssbot" target="_blank" rel="noopener">
+          Launch @linklenssbot on Telegram ↗
+        </a>
+        <a class="btn btn-secondary" href="https://github.com/momalekiii/LinkLens" target="_blank" rel="noopener">
+          Inspect Audit Repository
+        </a>
+      </div>
+
+      <div class="terminal">
+        <div class="terminal-header">
+          <span>@linklenssbot — live single-message scan</span>
+          <span>[▰▰▰▰] 100%</span>
+        </div>
+        <div class="t-line"><span class="t-muted">$ scan</span> <span class="t-accent">https://shaparak.ir/verify</span></div>
+        <div class="t-line"><span class="t-ok">✓</span> VirusTotal v3 (90+ Engines) ........ <span class="t-ok">0/92 Clean</span></div>
+        <div class="t-line"><span class="t-ok">✓</span> Google Safe Browsing &amp; URLScan ..... <span class="t-ok">Verified Safe</span></div>
+        <div class="t-line"><span class="t-ok">✓</span> MotmaenBash &amp; Kaveh IOC Feeds ...... <span class="t-ok">Official Gateway</span></div>
+        <div class="t-line"><span class="t-ok">✓</span> DoH DNS / RDAP WHOIS / crt.sh TLS .. <span class="t-ok">Valid (SPF + DMARC)</span></div>
+        <div class="t-line"><span class="t-ok">✓</span> Deep HTTP &amp; Phishing DOM Inspector . <span class="t-ok">No Skimmers Detected</span></div>
+      </div>
+
+      <div class="section-title">Detection Architecture</div>
+      <div class="grid">
+        <div class="card">
+          <h3>Multi-Vendor Threat Engines</h3>
+          <p>Aggregates VirusTotal v3, Google Safe Browsing v4, URLScan.io, AbuseIPDB v2, and IPQualityScore AI.</p>
+        </div>
+        <div class="card">
+          <h3>Regional &amp; Breach Intel</h3>
+          <p>Integrates Have I Been Pwned v3, MotmaenBash Shaparak verification, Leakfa, and Nooshdaroo Kaveh SHA-256 feeds.</p>
+        </div>
+        <div class="card">
+          <h3>DOM &amp; Network Forensics</h3>
+          <p>Inspects Cloudflare DoH DNS records, RDAP domain age, Certificate Transparency logs, and card-skimmer DOM patterns.</p>
+        </div>
+      </div>
+
+      <div class="audit-box">
+        <strong>Public Security &amp; Privacy Audit:</strong>
+        The complete source code for LinkLens's V8 isolate runtime (<code>tgcloud/</code>) and Telegram Mini App (<code>src/</code>) is publicly verifiable on GitHub. Official deployment integrity is cryptographically enforced via SHA-256 commitment in <code>instanceGuard.js</code>.
+      </div>
+    </main>
+
+    <footer>
+      <span>© 2026 <a href="https://github.com/momalekiii">@momalekiii</a> · All Rights Reserved</span>
+      <span>FA · EN · RU</span>
+    </footer>
+  </div>
+</body>
+</html>
