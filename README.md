@@ -1,5 +1,9 @@
 # 🛡 LinkLens — Official Source Code & Security Audit Repository
 
+[![Launch on Telegram](https://img.shields.io/badge/Telegram-Launch_@linklenssbot-26A5E4?style=flat-square&logo=telegram&logoColor=white)](https://t.me/linklenssbot)
+
+**🚀 Try the live bot on Telegram:** [**@linklenssbot (t.me/linklenssbot) ↗**](https://t.me/linklenssbot)
+
 > **📌 Transparency & Audit Notice (All Rights Reserved)**
 > This repository publishes the source code of **LinkLens** strictly so users and security reviewers can **inspect and verify** that all link-scanning logic, database tables, and Mini App views are transparent, clean, and privacy-safe.
 > **Self-hosting, cloning, modifying, or operating unauthorized copies of this bot is strictly prohibited** ([`LICENSE`](./LICENSE)) and cryptographically locked at runtime (`tgcloud/lib/instanceGuard.js`).
