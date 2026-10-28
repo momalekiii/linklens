@@ -1,0 +1,31 @@
+# ============================================================================
+# Git Security & Build Ignore Rules — LinkLens
+# NEVER commit credentials, tokens, local .env files, or build artifacts!
+# ============================================================================
+
+# Telegram Serverless CLI credentials, tokens & cloud state
+.tgcloud/
+.tgcloud
+
+# Local environment secrets & keys (keep .env.example tracked!)
+.env
+.env.*
+!.env.example
+secrets.local.*
+*.pem
+*.key
+*.secret
+
+# Dependencies & build output
+node_modules/
+dist/
+coverage/
+
+# OS & editor files
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+.idea/
+.vscode/*
+!.vscode/extensions.json

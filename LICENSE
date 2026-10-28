@@ -1,0 +1,32 @@
+LINKLENS PUBLIC AUDIT & TRANSPARENCY LICENSE
+Copyright (c) 2026 momalekiii.github.io — All Rights Reserved.
+
+1. PURPOSE OF PUBLICATION (CODE TRANSPARENCY & SECURITY AUDIT ONLY)
+This source code is published publicly for the sole purpose of transparency,
+independent code review, and privacy/security auditing so users can verify
+how LinkLens inspects URLs and handles data.
+
+2. STRICTLY PROHIBITED USES
+NO LICENSE OR PERMISSION IS GRANTED — express or implied — to any person or
+entity to:
+  (a) deploy, host, operate, or run any Telegram bot, Mini App, web service,
+      or serverless instance derived in whole or in part from this repository;
+  (b) copy, reproduce, redistribute, sublicense, sell, or commercialize any
+      portion of this source code or user interface;
+  (c) modify, fork for deployment, remove cryptographic instance verification
+      guards (`tgcloud/lib/instanceGuard.js`), or create derivative works.
+
+3. PERMITTED INSPECTION
+Reading and statically inspecting the files in this repository within a local
+editor or browser strictly to verify security, privacy, and non-malicious
+behavior is permitted.
+
+4. OPEN THREAT INTELLIGENCE DATA ATTRIBUTION
+LinkLens queries independent open security datasets under their respective terms:
+  - MotmaenBash Dataset (`miladnouri/motmaenbash-data`) — CC-BY-4.0
+  - Leakfa Breach Feed (`Leakfarsi/Leakfa-Alert`) — MIT
+  - Nooshdaroo Kaveh Project (`Nooshdaroo-Code/Kaveh`)
+  - Have I Been Pwned Breach API (`haveibeenpwned.com/API/v3`)
+
+All rights in the LinkLens software, architecture, and branding not expressly
+stated in Section 3 are strictly reserved by the copyright holder.

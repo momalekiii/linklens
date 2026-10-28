@@ -1,0 +1,701 @@
+:root {
+  --bg-base: #070b14;
+  --bg-surface: #0f172a;
+  --bg-elevated: #162033;
+  --bg-input: #0b1220;
+  --border-subtle: rgba(148, 163, 184, 0.14);
+  --border-strong: rgba(148, 163, 184, 0.26);
+  --text-main: #f1f5f9;
+  --text-muted: #94a3b8;
+  --text-dim: #64748b;
+
+  /* Exact Telegram Bot API 9.4 Button Semantic Colors */
+  --tg-primary: #2563eb;
+  --tg-primary-hover: #3b82f6;
+  --tg-success: #16a34a;
+  --tg-success-hover: #22c55e;
+  --tg-danger: #dc2626;
+  --tg-danger-hover: #ef4444;
+  --tg-warn: #f59e0b;
+
+  --radius-xl: 18px;
+  --radius-lg: 14px;
+  --radius-md: 10px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: radial-gradient(circle at 15% 0%, rgba(37, 99, 235, 0.14), transparent 45%),
+              radial-gradient(circle at 85% 5%, rgba(22, 163, 74, 0.10), transparent 40%),
+              var(--bg-base);
+  color: var(--text-main);
+  font-family: 'Inter', 'Vazirmatn', -apple-system, BlinkMacSystemFont, sans-serif;
+  min-height: 100vh;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+[dir="rtl"] {
+  font-family: 'Vazirmatn', 'Inter', Tahoma, sans-serif;
+}
+
+code, .mono {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+  direction: ltr;
+  unicode-bidi: embed;
+}
+
+/* Studio Top Bar (Hidden automatically inside native Telegram WebApp) */
+.studio-bar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 18px;
+  background: rgba(7, 11, 20, 0.88);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.brand-cluster {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-logo {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #2563eb, #10b981);
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.35);
+}
+
+.brand-title {
+  font-weight: 800;
+  font-size: 16px;
+  letter-spacing: -0.02em;
+}
+
+.brand-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.mode-pills {
+  display: flex;
+  gap: 6px;
+  background: var(--bg-surface);
+  padding: 4px;
+  border-radius: 11px;
+  border: 1px solid var(--border-subtle);
+}
+
+.mode-pill {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.16s ease;
+}
+
+.mode-pill.active {
+  background: var(--tg-primary);
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(37, 99, 235, 0.35);
+}
+
+.lang-quick-switch {
+  display: flex;
+  gap: 6px;
+}
+
+.lang-chip {
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  color: var(--text-main);
+  padding: 5px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s ease;
+}
+
+.lang-chip.active-fa { background: var(--tg-success); border-color: transparent; color: #fff; }
+.lang-chip.active-en { background: var(--tg-primary); border-color: transparent; color: #fff; }
+.lang-chip.active-ru { background: var(--tg-danger); border-color: transparent; color: #fff; }
+
+/* Workspace Grid */
+.workspace {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 18px;
+  display: grid;
+  gap: 20px;
+  align-items: start;
+}
+
+.workspace.layout-split {
+  grid-template-columns: minmax(360px, 500px) minmax(0, 1fr);
+}
+
+.workspace.layout-single {
+  max-width: 780px;
+  grid-template-columns: 1fr;
+}
+
+@media (max-width: 960px) {
+  .workspace.layout-split {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ========================================================================== */
+/* LEFT PANE: AUTHENTIC TELEGRAM BOT API 10.3 LIVE CHAT SIMULATOR             */
+/* ========================================================================== */
+.tg-sim-shell {
+  background: #0e1621;
+  border: 1px solid rgba(99, 179, 237, 0.18);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 96px);
+  min-height: 620px;
+  max-height: 830px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+}
+
+.tg-sim-header {
+  background: #17212b;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.tg-bot-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2563eb, #16a34a);
+  display: grid;
+  place-items: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.tg-sim-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 0);
+  background-size: 20px 20px;
+}
+
+.tg-msg-row {
+  display: flex;
+  flex-direction: column;
+  max-width: 92%;
+}
+
+.tg-msg-row.user {
+  align-self: flex-end;
+}
+
+.tg-msg-row.bot {
+  align-self: flex-start;
+  width: 92%;
+}
+
+.tg-bubble {
+  padding: 10px 13px;
+  border-radius: 14px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  word-break: break-word;
+  white-space: pre-wrap;
+  unicode-bidi: plaintext;
+}
+
+.tg-msg-row.user .tg-bubble {
+  background: #2b5278;
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+
+.tg-msg-row.bot .tg-bubble {
+  background: #182533;
+  color: #e2e8f0;
+  border-bottom-left-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.tg-bubble code {
+  background: rgba(15, 23, 42, 0.75);
+  color: #7dd3fc;
+  padding: 1px 5px;
+  border-radius: 5px;
+  font-size: 12px;
+}
+
+.tg-bubble blockquote {
+  margin-top: 6px;
+  padding: 8px 10px;
+  border-inline-start: 3px solid #3b82f6;
+  background: rgba(15, 23, 42, 0.55);
+  border-radius: 6px;
+  font-size: 12.5px;
+}
+
+/* Live Draft Streaming Bubble (`sendMessageDraft`) */
+.tg-draft-bubble {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.22), rgba(22, 163, 74, 0.16));
+  border: 1px dashed rgba(96, 165, 250, 0.55);
+  padding: 11px 13px;
+  border-radius: 14px;
+  font-size: 13px;
+  animation: pulseBorder 1.3s infinite ease-in-out;
+}
+
+@keyframes pulseBorder {
+  0%, 100% { border-color: rgba(96, 165, 250, 0.45); }
+  50% { border-color: rgba(52, 211, 153, 0.9); }
+}
+
+.tg-draft-footer {
+  margin-top: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11.5px;
+  color: #93c5fd;
+}
+
+/* Authentic Telegram Bot API 9.4 Colored Inline Keyboard Buttons! */
+.tg-inline-kb {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 5px;
+}
+
+.tg-kb-row {
+  display: flex;
+  gap: 5px;
+}
+
+.tg-kb-btn {
+  flex: 1;
+  border: none;
+  border-radius: 9px;
+  padding: 8.5px 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: inherit;
+  color: #ffffff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  transition: transform 0.1s ease, filter 0.15s ease;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.tg-kb-btn:hover { filter: brightness(1.12); }
+.tg-kb-btn:active { transform: scale(0.98); }
+
+.tg-kb-btn.style-primary {
+  background: linear-gradient(180deg, #2b6cb0, #1d4ed8);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+.tg-kb-btn.style-success {
+  background: linear-gradient(180deg, #16a34a, #15803d);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+.tg-kb-btn.style-danger {
+  background: linear-gradient(180deg, #dc2626, #b91c1c);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+.tg-sim-quickbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 8px 12px;
+  background: #131c26;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.sim-chip {
+  font-size: 11.5px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: #1c2938;
+  color: #cbd5e1;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.sim-chip.warn {
+  border-color: rgba(239, 68, 68, 0.45);
+  color: #fca5a5;
+}
+
+.tg-sim-composer {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #17212b;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.tg-sim-composer input {
+  flex: 1;
+  background: #0e1621;
+  border: 1px solid var(--border-subtle);
+  color: #fff;
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: 13.5px;
+  font-family: inherit;
+  outline: none;
+}
+
+.tg-sim-composer input:focus {
+  border-color: var(--tg-primary-hover);
+}
+
+/* ========================================================================== */
+/* RIGHT PANE: LINKLENS MINI APP UI (`https://app<id>.tgcloud.ai/`)           */
+/* ========================================================================== */
+.miniapp-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  padding: 22px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+}
+
+.miniapp-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.nav-tabs {
+  display: flex;
+  gap: 6px;
+  background: var(--bg-input);
+  padding: 4px;
+  border-radius: 10px;
+  border: 1px solid var(--border-subtle);
+}
+
+.nav-tab {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.nav-tab.active {
+  background: var(--bg-elevated);
+  color: #fff;
+  border: 1px solid var(--border-strong);
+}
+
+/* Colored Action Buttons matching Telegram Bot API 9.4 */
+.colored-btn {
+  border: none;
+  border-radius: 11px;
+  padding: 11px 16px;
+  font-size: 13.5px;
+  font-weight: 700;
+  font-family: inherit;
+  color: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.15s ease;
+  text-decoration: none;
+}
+
+.colored-btn:disabled { opacity: 0.55; cursor: wait; }
+.colored-btn.primary { background: linear-gradient(135deg, #2563eb, #1d4ed8); }
+.colored-btn.success { background: linear-gradient(135deg, #16a34a, #15803d); }
+.colored-btn.danger  { background: linear-gradient(135deg, #dc2626, #b91c1c); }
+.colored-btn:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); }
+
+/* First-Launch Language Onboarding Gate */
+.lang-gate-box {
+  text-align: center;
+  padding: 28px 16px;
+}
+
+.lang-gate-grid {
+  display: grid;
+  gap: 12px;
+  max-width: 400px;
+  margin: 22px auto 0;
+}
+
+/* URL Search Form */
+.scan-form {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+@media (max-width: 600px) {
+  .scan-form { flex-direction: column; }
+}
+
+.scan-input {
+  flex: 1;
+  background: var(--bg-input);
+  border: 1px solid var(--border-strong);
+  border-radius: 12px;
+  padding: 12px 15px;
+  color: #fff;
+  font-size: 14px;
+  outline: none;
+}
+
+.scan-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
+}
+
+.preset-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.preset-btn {
+  border: none;
+  border-radius: 8px;
+  padding: 6px 11px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.options-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 18px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.options-row label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+/* Report Hero Score Card */
+.report-hero {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 18px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 560px) {
+  .report-hero { grid-template-columns: 1fr; text-align: center; justify-items: center; }
+}
+
+.score-ring {
+  width: 104px;
+  height: 104px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+
+.score-inner {
+  width: 82px;
+  height: 82px;
+  border-radius: 50%;
+  background: var(--bg-surface);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.score-num {
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.score-sub {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.verdict-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  margin-bottom: 8px;
+}
+
+.verdict-SAFE { background: rgba(22, 163, 74, 0.2); color: #4ade80; border: 1px solid rgba(74, 222, 128, 0.35); }
+.verdict-LOW_RISK { background: rgba(37, 99, 235, 0.22); color: #60a5fa; border: 1px solid rgba(96, 165, 250, 0.35); }
+.verdict-SUSPICIOUS { background: rgba(245, 158, 11, 0.2); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.35); }
+.verdict-MALICIOUS { background: rgba(220, 38, 38, 0.25); color: #f87171; border: 1px solid rgba(248, 113, 113, 0.45); }
+
+.cat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.cat-box {
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: 11px;
+  padding: 11px 13px;
+}
+
+.cat-bar-track {
+  height: 6px;
+  background: rgba(148, 163, 184, 0.15);
+  border-radius: 999px;
+  margin-top: 7px;
+  overflow: hidden;
+}
+
+.cat-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+}
+
+.detail-panel {
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  margin-top: 12px;
+}
+
+.kv-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.kv-item {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.kv-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 3px;
+}
+
+.kv-val {
+  font-size: 13px;
+  font-weight: 600;
+  word-break: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.5;
+  unicode-bidi: plaintext;
+}
+
+.finding-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.finding-row.critical, .finding-row.high {
+  border-color: rgba(239, 68, 68, 0.4);
+  background: rgba(220, 38, 38, 0.08);
+}
+
+.toast-banner {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1e293b;
+  color: #fff;
+  border: 1px solid rgba(59, 130, 246, 0.5);
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  z-index: 200;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55);
+}
