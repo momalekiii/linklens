@@ -19,7 +19,16 @@ import {
 import { inspectHttpAndDom } from './providers/httpInspector.js';
 import { checkIranianSecurityAndBreaches } from './providers/iranIntel.js';
 import { recordUserScanStats, ensureDbReady } from './usersRepo.js';
-import { parseUrlPure } from './v8Runtime.js';
+import { parseUrlPure, boundedLayer } from './v8Runtime.js';
+
+// Neutral fallbacks: if a source is slow or fails, the layer reports "standby"
+// instead of aborting the whole scan (which used to freeze the live message).
+const EMPTY_IRAN = { unavailable: true, breaches: [], feedStats: {}, hasBreachHistory: false };
+const EMPTY_ENGINE = { status: 'unavailable', malicious: 0, suspicious: 0, flagged: false };
+const EMPTY_DNS = { unavailable: true, aRecords: [], aaaaRecords: [], nsRecords: [], mxRecords: [], hasSpf: false, hasDmarc: false, hasCaa: false };
+const EMPTY_HTTP = { reachable: false, httpsEnforced: false, dom: {}, presentHeaders: [], missingHeaders: [] };
+const EMPTY_REP = { status: 'standby' };
+const LAYER_BUDGET_MS = 6000;
 
 // Built-in showcase URLs (Shaparak & Iranian presets shown exclusively in Farsi `fa`!)
 export const DEMO_SAFE_URL = 'https://github.com/telegramdesktop/tdesktop';
@@ -67,11 +76,12 @@ export async function runFullSecurityScan({
         .orderBy(desc(scans.id))
         .get();
 
-      if (cached && cached.report) {
+      if (cached && cached.report?.pipelineVersion === 4) {
         const clonedReport = {
           ...cached.report,
           cached: true,
-          durationMs: Date.now() - startedAt,
+          durationMs: cached.report.durationMs,
+          retrievalMs: Date.now() - startedAt,
         };
         const [savedRow] = await db.insert(scans)
           .values({
@@ -108,7 +118,16 @@ export async function runFullSecurityScan({
 
   const cfg = await getConfigMap();
   const lexical = runLexicalHeuristics(target, spoofAlert);
-  const httpInfo = await inspectHttpAndDom(target.normalizedUrl, target.registrableDomain);
+  const httpInfo = await boundedLayer(
+    () => inspectHttpAndDom(target.normalizedUrl, target.registrableDomain),
+    { ...EMPTY_HTTP, finalUrl: target.normalizedUrl, finalDomain: target.registrableDomain },
+    LAYER_BUDGET_MS
+  );
+
+  if (httpInfo.reachable && httpInfo.httpsEnforced) {
+    lexical.findings = lexical.findings.filter((f) => f.code !== 'NO_HTTPS');
+    if (target.protocol === 'http:') lexical.points = Math.max(0, lexical.points - 15);
+  }
 
   const effectiveFinalUrl = httpInfo.finalUrl || target.normalizedUrl;
   const effectiveDomain = httpInfo.finalDomain || target.registrableDomain;
@@ -119,8 +138,9 @@ export async function runFullSecurityScan({
   if (onStage) await onStage(2);
   if (await isScanStopped(draftKey)) return { ok: false, error: 'STOPPED' };
 
+  const budget = LAYER_BUDGET_MS;
   const [iran, vt, gsb, urlscan, dns, rdap, sslRaw] = await Promise.all([
-    checkIranianSecurityAndBreaches({
+    boundedLayer(() => checkIranianSecurityAndBreaches({
       inputUrl: target.inputUrl,
       normalizedUrl: target.normalizedUrl,
       finalUrl: effectiveFinalUrl,
@@ -128,13 +148,13 @@ export async function runFullSecurityScan({
       finalHostname: effectiveHostname,
       httpsEnforced: httpInfo.httpsEnforced,
       payloadSha256: httpInfo.payloadSha256,
-    }),
-    checkVirusTotal(effectiveFinalUrl, cfg.VIRUSTOTAL_API_KEY),
-    checkGoogleSafeBrowsing([target.normalizedUrl, effectiveFinalUrl], cfg.GOOGLE_SAFE_BROWSING_KEY),
-    checkUrlScan(effectiveFinalUrl, effectiveHostname, cfg.URLSCAN_API_KEY),
-    inspectDnsPosture(effectiveHostname, effectiveDomain),
-    inspectRdapDomainAge(effectiveDomain),
-    inspectSslTransparency(effectiveDomain),
+    }), EMPTY_IRAN, budget),
+    boundedLayer(() => checkVirusTotal(effectiveFinalUrl, cfg.VIRUSTOTAL_API_KEY), EMPTY_ENGINE, budget),
+    boundedLayer(() => checkGoogleSafeBrowsing([target.normalizedUrl, effectiveFinalUrl], cfg.GOOGLE_SAFE_BROWSING_KEY), EMPTY_ENGINE, budget),
+    boundedLayer(() => checkUrlScan(effectiveFinalUrl, effectiveHostname, cfg.URLSCAN_API_KEY), EMPTY_ENGINE, budget),
+    boundedLayer(() => inspectDnsPosture(effectiveHostname, effectiveDomain), EMPTY_DNS, budget),
+    boundedLayer(() => inspectRdapDomainAge(effectiveDomain), {}, budget),
+    boundedLayer(() => inspectSslTransparency(effectiveDomain), {}, budget),
   ]);
 
   // Stage 3: Server IP Reputation & Geolocation Telemetry
@@ -142,12 +162,12 @@ export async function runFullSecurityScan({
   if (await isScanStopped(draftKey)) return { ok: false, error: 'STOPPED' };
 
   const primaryIp = dns.aRecords[0] || urlscan.latestScan?.ip || null;
-  const ipRep = await checkIpAndUrlReputation({
+  const ipRep = await boundedLayer(() => checkIpAndUrlReputation({
     url: effectiveFinalUrl,
     primaryIp,
     abuseKey: cfg.ABUSEIPDB_API_KEY,
     ipqsKey: cfg.IPQUALITYSCORE_API_KEY,
-  });
+  }), EMPTY_REP, budget);
 
   const ssl = {
     ...sslRaw,
@@ -162,7 +182,7 @@ export async function runFullSecurityScan({
   let points = lexical.points;
   // Active keyless layers always checked:
   // 1) DoH DNS, 2) RDAP, 3) crt.sh SSL, 4) HTTP/DOM, 5) MotmaenBash+Shaparak, 6) Kaveh Malware, 7) Leakfa+HIBP
-  let enginesChecked = 7;
+  let enginesChecked = [httpInfo.reachable, !dns.unavailable, rdap.ageDays != null, ssl.certsFound > 0, ...(Object.values(iran.sources || {}).map((v) => v.entries > 0))].filter(Boolean).length;
   let enginesFlagged = 0;
 
   // 0. Iranian Security & Gateway Intelligence Scoring (MotmaenBash + Shaparak + Kaveh + Leakfa/HIBP)
@@ -390,7 +410,7 @@ export async function runFullSecurityScan({
       params: { missing: httpInfo.missingHeaders.slice(0, 3).join(', ') },
     });
   }
-  if (!dns.isIpLiteral && !dns.hasDmarc && !dns.nxdomain && iran.shaparakStatus !== 'VERIFIED_SHAPARAK') {
+  if (!dns.unavailable && !dns.isIpLiteral && !dns.hasDmarc && !dns.nxdomain && iran.shaparakStatus !== 'VERIFIED_SHAPARAK') {
     findings.push({ code: 'NO_EMAIL_AUTH', severity: 'info', weight: 2 });
     points += 2;
   }
@@ -416,6 +436,20 @@ export async function runFullSecurityScan({
   const durationMs = Date.now() - startedAt;
 
   const report = {
+    pipelineVersion: 4,
+    limited: true,
+    sourceResults: {
+      motmaenbash: iran.sources?.motmaenbash || {status: 'unavailable'},
+      leakfa: iran.sources?.leakfa || {status: 'unavailable'},
+      kaveh: iran.sources?.kaveh || {status: 'unavailable'},
+      hibp: iran.sources?.hibp || {status: 'unavailable'},
+      dns: {status: dns.unavailable ? 'unavailable' : 'ok'},
+      rdap: {status: rdap.status || 'unavailable'},
+      certificates: {status: sslRaw.status || 'unavailable'},
+      http: {status: httpInfo.reachable ? 'ok' : 'unavailable'},
+      urlscan: {status: urlscan.status || 'unavailable', httpStatus: urlscan.httpStatus},
+    },
+    coverage: { timersAvailable: typeof globalThis.setTimeout === 'function', checked: enginesChecked },
     inputUrl: target.inputUrl,
     normalizedUrl: target.normalizedUrl,
     finalUrl: effectiveFinalUrl,

@@ -1,14 +1,15 @@
 import { db } from 'sdk';
-import { eq, sql } from 'sdk/db';
+import { eq } from 'sdk/db';
 import { botConfig } from '../schema.js';
 import { getIranFeedTelemetry } from './providers/iranIntel.js';
+import { nowSec } from './clock.js';
 
 // ============================================================================
 // LinkLens External Threat-Intelligence & Runtime Configuration
 // ============================================================================
 // SECURITY NOTE FOR PUBLIC GITHUB REPOSITORIES:
 // Keep ALL fields in `DEFAULT_SECRETS` empty (`''`) in source control!
-// Runtime secrets (`ADMIN_TG_IDS`, `MINI_APP_URL`, and optional API keys) are
+// Runtime secrets (`ADMIN_TG_IDS` and optional API keys) are
 // stored strictly in Telegram Serverless's isolated SQLite table (`bot_config`)
 // via local `.env` + `npm run deploy` or via `/setkey` inside Telegram chat.
 // ============================================================================
@@ -19,7 +20,6 @@ export const DEFAULT_SECRETS = {
   URLSCAN_API_KEY: '',
   ABUSEIPDB_API_KEY: '',
   IPQUALITYSCORE_API_KEY: '',
-  MINI_APP_URL: '',
   ADMIN_TG_IDS: '',
   INSTANCE_ACTIVATION_KEY: '',
 };
@@ -44,10 +44,6 @@ export const KEY_ALIASES = {
   ipqs: 'IPQUALITYSCORE_API_KEY',
   ipqualityscore: 'IPQUALITYSCORE_API_KEY',
   IPQUALITYSCORE_API_KEY: 'IPQUALITYSCORE_API_KEY',
-
-  miniapp: 'MINI_APP_URL',
-  appurl: 'MINI_APP_URL',
-  MINI_APP_URL: 'MINI_APP_URL',
 
   admin: 'ADMIN_TG_IDS',
   admins: 'ADMIN_TG_IDS',
@@ -83,10 +79,10 @@ export async function setConfigValue(rawKey, value) {
     return { ok: true, key: canonical, cleared: true };
   }
   await db.insert(botConfig)
-    .values({ key: canonical, value: cleanVal, updatedAt: sql`(unixepoch())` })
+    .values({ key: canonical, value: cleanVal, updatedAt: nowSec() })
     .onConflictDoUpdate({
       target: botConfig.key,
-      set: { value: cleanVal, updatedAt: sql`(unixepoch())` },
+      set: { value: cleanVal, updatedAt: nowSec() },
     })
     .run();
   return { ok: true, key: canonical, cleared: false };
@@ -110,7 +106,7 @@ export async function getEngineStatuses(lang = 'en') {
             id: 'motmaenbash',
             alias: 'mb',
             envKey: null,
-            name: '🇮🇷 اصالت درگاه شاپرک و ضد فیشینگ مطمئن‌باش (CC-BY-4.0)',
+            name: 'Shaparak gateway · MotmaenBash anti-phishing (CC-BY-4.0)',
             configured: true,
             masked: iranFeeds?.motmaenBashUrls
               ? `فعال (${iranFeeds.motmaenBashUrls} لینک فیشینگ + ${iranFeeds.motmaenBashApks} بدافزار اندروید)`
@@ -121,7 +117,7 @@ export async function getEngineStatuses(lang = 'en') {
             id: 'leakfa',
             alias: 'leakfa',
             envKey: null,
-            name: '🇮🇷 دیتابیس نشت اطلاعات لیک‌فا (Leakfa) + HIBP v3',
+            name: 'Leakfa breach database + HIBP v3',
             configured: true,
             masked: iranFeeds?.leakfaDomains
               ? `فعال (${iranFeeds.leakfaDomains} سامانه ایرانی + ${iranFeeds.hibpBreaches} سرویس جهانی)`
@@ -132,7 +128,7 @@ export async function getEngineStatuses(lang = 'en') {
             id: 'kaveh',
             alias: 'kaveh',
             envKey: null,
-            name: '🇮🇷 پایگاه بدافزار و تروجان کاوه (نوشدارو)',
+            name: 'Kaveh malware & trojan signatures',
             configured: true,
             masked: iranFeeds?.kavehMalware
               ? `فعال (${iranFeeds.kavehMalware} امضای SHA-256)`
@@ -148,7 +144,7 @@ export async function getEngineStatuses(lang = 'en') {
             name: 'Have I Been Pwned v3 Data Breach Feed',
             configured: true,
             masked: iranFeeds?.hibpBreaches
-              ? `Live (${iranFeeds.hibpBreaches} verified breaches)`
+              ? `Cached (${iranFeeds.hibpBreaches} verified breaches)`
               : 'Active',
             tier: 'live_api',
           },
@@ -159,7 +155,7 @@ export async function getEngineStatuses(lang = 'en') {
             name: 'Open Anti-Phishing & APK Malware SHA-256 Feeds',
             configured: true,
             masked: iranFeeds?.motmaenBashUrls
-              ? `Live (${iranFeeds.motmaenBashUrls + (iranFeeds.motmaenBashApks || 0) + (iranFeeds.kavehMalware || 0)} IOC hashes)`
+              ? `Cached (${iranFeeds.motmaenBashUrls + (iranFeeds.motmaenBashApks || 0) + (iranFeeds.kavehMalware || 0)} IOC hashes)`
               : 'Active',
             tier: 'live_api',
           },
@@ -216,7 +212,7 @@ export async function getEngineStatuses(lang = 'en') {
       envKey: null,
       name: 'Cloudflare DoH (DNS / SPF / DMARC / CAA)',
       configured: true,
-      masked: 'Active (Keyless API)',
+      masked: 'Enabled — not a health check',
       tier: 'live_api',
     },
     {
@@ -225,16 +221,16 @@ export async function getEngineStatuses(lang = 'en') {
       envKey: null,
       name: 'IANA RDAP WHOIS & Domain Age',
       configured: true,
-      masked: 'Active (Keyless API)',
+      masked: 'Enabled — not a health check',
       tier: 'live_api',
     },
     {
       id: 'ssl_ct',
       alias: 'ssl',
       envKey: null,
-      name: 'crt.sh Certificate Transparency + TLS',
+      name: 'Cert Spotter / crt.sh Certificate Transparency + TLS',
       configured: true,
-      masked: 'Active (Keyless API)',
+      masked: 'Enabled — not a health check',
       tier: 'live_api',
     },
     {
@@ -243,7 +239,7 @@ export async function getEngineStatuses(lang = 'en') {
       envKey: null,
       name: 'Deep HTTP Headers, Redirects & Phishing DOM',
       configured: true,
-      masked: 'Active (Built-in Engine)',
+      masked: 'Enabled — not a health check',
       tier: 'live_api',
     },
   ];

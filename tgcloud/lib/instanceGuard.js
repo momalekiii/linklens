@@ -37,6 +37,6 @@ export function assertAuthorizedInstance(cfg = {}) {
 }
 
 export const UNAUTHORIZED_CLONE_MESSAGE =
-  '⛔ <b>Unauthorized Bot Instance</b>\n\n' +
+  '<b>UNAUTHORIZED INSTANCE</b>\n\n' +
   'This source code is published exclusively for <b>public security &amp; privacy auditing</b>.\n' +
   'Cloning or hosting unauthorized copies of LinkLens is prohibited.';

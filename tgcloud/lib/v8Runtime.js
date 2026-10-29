@@ -24,6 +24,22 @@ export function safeTimeout(promise, ms = 6000, label = 'Timeout') {
   });
 }
 
+
+// Resolve to `fallback` on rejection or after `ms` — a scan stage must never
+// hang or abort because one external source is slow or unreachable.
+export function withFallback(promise, fallback, ms = 8000) {
+  const g = typeof globalThis !== 'undefined' ? globalThis : {};
+  const settled = Promise.resolve(promise).catch(() => fallback);
+  if (typeof g.setTimeout !== 'function') return settled;
+  let timer;
+  const deadline = new Promise((resolve) => {
+    timer = g.setTimeout(() => resolve(fallback), ms);
+  });
+  return Promise.race([settled, deadline]).finally(() => {
+    if (typeof g.clearTimeout === 'function' && timer) g.clearTimeout(timer);
+  });
+}
+
 // Pure JS UTF-8 String -> Uint8Array (handles full Unicode BMP + Astral planes)
 export function utf8Encode(str) {
   const s = String(str ?? '');
@@ -266,4 +282,16 @@ export function parseQueryEntriesPure(search) {
     entries.push([k, v]);
   }
   return entries;
+}
+
+// Lazy execution is essential: never start unbounded network work in an isolate
+// without a usable deadline. Fail closed to an explicitly limited assessment.
+export function boundedLayer(start, fallback, ms = 2000) {
+  if (typeof globalThis.setTimeout !== 'function') {
+    // Telegram's SDK owns request execution in timerless isolates. Do not silently
+    // disable functional sources merely because browser timers are absent.
+    return Promise.resolve().then(start).catch(() => fallback);
+  }
+  try { return withFallback(Promise.resolve().then(start), fallback, ms); }
+  catch (_) { return Promise.resolve(fallback); }
 }

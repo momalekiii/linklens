@@ -66,6 +66,7 @@ export async function inspectDnsPosture(hostname, registrableDomain) {
   const dmarcRecord = dmarcStrings.find((s) => s.toLowerCase().includes('v=dmarc1')) || null;
 
   return {
+    unavailable: aRes.status < 0 && aaaaRes.status < 0,
     isIpLiteral: false,
     nxdomain: aRes.status === 3 && aaaaRes.status === 3,
     dnssecValidated: Boolean(aRes.dnssecValidated || nsRes.dnssecValidated),
@@ -155,7 +156,7 @@ export async function inspectRdapDomainAge(registrableDomain) {
   }
 }
 
-export async function inspectSslTransparency(registrableDomain) {
+async function inspectCrtSh(registrableDomain) {
   if (isRawIp(registrableDomain)) {
     return { status: 'skipped_ip', certsFound: 0, issuer: null, validUntil: null };
   }
@@ -192,4 +193,23 @@ export async function inspectSslTransparency(registrableDomain) {
   } catch (_) {
     return { status: 'unavailable', certsFound: 0, issuer: null };
   }
+}
+
+// Public certificate-transparency fallback; CT history does NOT validate the
+// certificate currently served by a website. HTTP reachability is separate.
+export async function inspectSslTransparency(domain) {
+  if (isRawIp(domain)) return {status:'skipped_ip',certsFound:0,issuer:null};
+  try {
+    const res = await withTimeout(fetch(`https://api.certspotter.com/v1/issuances?domain=${encodeURIComponent(domain)}&include_subdomains=false&expand=dns_names&expand=issuer`, {headers:{Accept:'application/json'}}), 2500, 'Cert Spotter timeout');
+    if (res.ok) {
+      const list = await res.json();
+      if (Array.isArray(list) && list.length) {
+        const ordered = list.slice().sort((a,b) => String(b.not_after || '').localeCompare(String(a.not_after || '')));
+        const cert = ordered.find((c) => !c.revoked) || ordered[0];
+        return {status:'ok', source:'certspotter', certsFound:list.length, issuer:cert.issuer?.friendly_name || cert.issuer?.name || null, notBefore:cert.not_before || null, notAfter:cert.not_after || null, historicalOnly:true};
+      }
+    }
+  } catch (_) { /* Try the independent CT index below. */ }
+  const result = await inspectCrtSh(domain);
+  return {...result,source:'crt.sh',historicalOnly:true};
 }

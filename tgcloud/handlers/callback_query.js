@@ -67,7 +67,7 @@ export default async function (query) {
   if (!isInstanceActivated(cfg)) {
     await api.answerCallbackQuery({
       callback_query_id: query.id,
-      text: '⛔ Unauthorized clone instance (Audit-only repository)',
+      text: 'Unauthorized instance — audit-only repository',
       show_alert: true,
     }).catch(() => null);
     return;
@@ -109,7 +109,7 @@ export default async function (query) {
         text: renderHomeMessage(chosen),
         parse_mode: 'HTML',
         link_preview_options: { is_disabled: true },
-        reply_markup: buildHomeKeyboard(chosen, cfg.MINI_APP_URL),
+        reply_markup: buildHomeKeyboard(chosen),
       });
     }
     return;
@@ -156,7 +156,7 @@ export default async function (query) {
         text: renderHomeMessage(lang),
         parse_mode: 'HTML',
         link_preview_options: { is_disabled: true },
-        reply_markup: buildHomeKeyboard(lang, cfg.MINI_APP_URL),
+        reply_markup: buildHomeKeyboard(lang),
       });
     }
     return;
@@ -206,7 +206,7 @@ export default async function (query) {
       await safeEditMessageText({
         chat_id: chatId,
         message_id: messageId,
-        text: renderApiKeysMessage(engines, cfg.MINI_APP_URL, lang),
+        text: renderApiKeysMessage(engines, lang),
         parse_mode: 'HTML',
         link_preview_options: { is_disabled: true },
         reply_markup: buildSimpleBackKeyboard(lang, admin),
@@ -222,7 +222,7 @@ export default async function (query) {
     }
     const counts = await getIranFeedTelemetry(true);
     const engines = await getEngineStatuses(lang);
-    await api.answerCallbackQuery({ callback_query_id: query.id, text: '✅ Synced!' }).catch(() => null);
+    await api.answerCallbackQuery({ callback_query_id: query.id, text: 'Feeds synced.' }).catch(() => null);
     if (chatId && messageId) {
       const syncBanner = s.lblFeedsSynced
         .replace('{urls}', String(counts.motmaenBashUrls))
@@ -233,7 +233,7 @@ export default async function (query) {
       await safeEditMessageText({
         chat_id: chatId,
         message_id: messageId,
-        text: `${syncBanner}\n\n${renderApiKeysMessage(engines, cfg.MINI_APP_URL, lang)}`,
+        text: `${syncBanner}\n\n${renderApiKeysMessage(engines, lang)}`,
         parse_mode: 'HTML',
         link_preview_options: { is_disabled: true },
         reply_markup: buildSimpleBackKeyboard(lang, true),
@@ -300,7 +300,6 @@ export default async function (query) {
           report: row.report,
           activeTab: tabName || 'overview',
           lang,
-          miniAppUrl: cfg.MINI_APP_URL,
           plainSummary,
           siblingScans: siblingMeta,
         }),

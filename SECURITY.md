@@ -1,28 +1,36 @@
-# 🔍 LinkLens Security & Privacy Audit Guide
+# Security policy
 
-This document helps users and independent security reviewers verify how **LinkLens** works under the hood without hidden telemetry, spyware, or unauthorized data collection.
+## Supported review target
+Version 2.2.0 is the current public audit snapshot. It is not independently
+certified or confirmed production-ready. Only the original authorized instance
+is intended for operation; this publication is for static review.
 
----
+## Reporting
+Prefer the repository's **Security → Report a vulnerability** workflow if the
+owner has enabled GitHub private vulnerability reporting. If unavailable, open
+only a non-sensitive issue requesting a private contact channel. Do not disclose
+a live exploit, private user URL, credential, activation value or personal data
+in public. No response-time promise or bug-bounty program is established here.
 
-## 1. Zero Hidden Telemetry & Network Transparency
+Include the affected version, file/function, impact, minimal redacted evidence,
+and suggested mitigation. Avoid scanning third parties without permission.
 
-Every external HTTP request in LinkLens occurs openly inside `tgcloud/lib/providers/`:
+## Priority review areas
+- URL normalization, embedded links, Unicode and public/private destination checks.
+- Redirect handling, DNS rebinding and SSRF resistance; full coverage is not proven.
+- Missing timers, platform execution limits, failed edits and cancellation paths.
+- Cached-feed freshness and provider failures versus genuine negative results.
+- HTML escaping, callback authorization and data isolation between users.
+- Persistent URL/configuration data and absence of a demonstrated retention policy.
+- Owner diagnostics, bootstrap and probe authorization. The generic probe branch
+  currently runs before the administrator check used by source diagnostics; review
+  its platform identity assumptions and potential information exposure.
+- Heuristic verdicts, internal SAFE fields and secondary UI labels despite limited
+  source coverage. No clean result should be presented as a guarantee.
 
-| File | Outbound Endpoints Contacted | Purpose |
-|---|---|---|
-| `tgcloud/lib/providers/httpInspector.js` | User-submitted URL (up to 6 safe hops) | Inspects HTTP status, redirect chain, OWASP security headers, and static phishing/skimmer DOM patterns |
-| `tgcloud/lib/providers/domainDnsSsl.js` | `cloudflare-dns.com`, `rdap.org`, `crt.sh` | Verifies DNS (`A`/`MX`/`SPF`/`DMARC`/`CAA`), domain age, and SSL Certificate Transparency logs |
-| `tgcloud/lib/providers/iranIntel.js` | `haveibeenpwned.com/api/v3/breaches`, `github.com/miladnouri/motmaenbash-data`, `github.com/Leakfarsi/Leakfa-Alert`, `github.com/Nooshdaroo-Code/Kaveh` | Checks public breach records, phishing blacklists, official Shaparak gateways, and APK malware SHA-256 hashes |
-| `tgcloud/lib/providers/{virustotal,safeBrowsing,urlscan,ipReputation}.js` | VirusTotal v3, Google Safe Browsing v4, URLScan.io, AbuseIPDB v2, IPQualityScore | Queries external threat-intelligence vendors for known malware/phishing verdicts |
+The activation guard restricts an unmodified instance; public source can be
+modified. It is not a substitute for runtime authentication or legal rights.
 
-No user messages unrelated to URL scanning are forwarded anywhere, and zero third-party analytics trackers exist in `index.html` or `src/`.
-
----
-
-## 2. Application Security & Isolation Controls
-
-- **Strict SSRF Protection (`tgcloud/lib/urlUtils.js`)**: Blocks loopback (`127.0.0.0/8`, `::1`), RFC-1918 private networks (`10/8`, `172.16/12`, `192.168/16`), link-local metadata endpoints (`169.254.0.0/16`), CGNAT (`100.64.0.0/10`), and `.local` / `.internal` hostnames on initial input and on every HTTP redirect hop.
-- **Per-User Scan Isolation (`tgcloud/endpoints/getScan.js`)**: Enforces strict `tg_id` ownership verification so one user cannot enumerate or view another user's private scan report (`FORBIDDEN` against IDOR).
-- **User-Controlled Data Deletion (`tgcloud/endpoints/getHistory.js` & `tgcloud/handlers/callback_query.js`)**: Users can permanently wipe their personal scan history at any time from either the Bot (`/history` → Clear) or Mini App.
-- **Pure ECMAScript V8 Isolate Execution (`tgcloud/lib/v8Runtime.js`)**: Built directly on pure ES2022 primitives (`sha256HexPure`, `parseUrlPure`, `utf8Encode`, `utf8Decode`) with zero opaque third-party runtime dependencies inside `tgcloud/`.
-- **Official Instance Verification (`tgcloud/lib/instanceGuard.js`)**: Protects users from counterfeit/fake clone bots via a one-way SHA-256 cryptographic commitment (`OFFICIAL_SEAL_SHA256`) checked across every chat handler and API endpoint.
+## Release checks are limited
+Credential-pattern checks and file hashing reduce accidental publication risk.
+They are not a proof of absence of secrets or vulnerabilities. See RELEASE-AUDIT.md.

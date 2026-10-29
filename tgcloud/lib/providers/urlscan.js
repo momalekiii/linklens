@@ -18,6 +18,7 @@ export async function checkUrlScan(url, hostname, apiKey) {
       'URLScan timeout'
     );
 
+    if (!res.ok) return { status: 'error', httpStatus: res.status, flagged: false, maliciousScans: 0, latestScan: null };
     let historicalMalicious = 0;
     let latestScan = null;
     let screenshot = null;

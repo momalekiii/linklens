@@ -1,8 +1,8 @@
 {
-  "name": "linklens-security-audit",
-  "version": "1.2.0",
+  "name": "linklens-public-audit",
+  "version": "2.2.0",
   "private": true,
+  "description": "Audit-only source snapshot; not a deployable distribution",
   "license": "SEE LICENSE IN LICENSE",
-  "description": "LinkLens — Official Public Security & Privacy Audit Source Repository (All Rights Reserved — Self-hosting & cloning prohibited)",
   "type": "module"
 }

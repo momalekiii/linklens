@@ -1,5 +1,5 @@
 import { api, db } from 'sdk';
-import { eq, sql } from 'sdk/db';
+import { eq } from 'sdk/db';
 import { botConfig } from '../schema.js';
 import { t, renderLanguageGateText, isValidLang } from '../lib/i18n.js';
 import { extractLinksFromMessage } from '../lib/urlUtils.js';
@@ -18,6 +18,7 @@ import {
   getEngineStatuses,
 } from '../lib/secrets.js';
 import { getIranFeedTelemetry } from '../lib/providers/iranIntel.js';
+import { nowSec } from '../lib/clock.js';
 import {
   buildLanguageGateKeyboard,
   buildHomeKeyboard,
@@ -49,7 +50,7 @@ async function acquireMessageOnceLock(chatId, messageId) {
     const existing = await db.select().from(botConfig).where(eq(botConfig.key, key)).get();
     if (existing?.value) return false;
     await db.insert(botConfig)
-      .values({ key, value: '1', updatedAt: sql`(unixepoch())` })
+      .values({ key, value: '1', updatedAt: nowSec() })
       .run();
     return true;
   } catch (_) {
@@ -119,7 +120,7 @@ export async function handleIncomingMessage(message) {
           ...(threadId ? { message_thread_id: threadId } : {}),
           text: renderHomeMessage(code),
           parse_mode: 'HTML',
-          reply_markup: buildHomeKeyboard(code, cfg.MINI_APP_URL),
+          reply_markup: buildHomeKeyboard(code),
         });
         return;
       }
@@ -153,7 +154,7 @@ export async function handleIncomingMessage(message) {
     await safeSendMessage({
       chat_id: chatId,
       ...(threadId ? { message_thread_id: threadId } : {}),
-      text: renderLanguageGateText(tgUser.first_name, false),
+      text: renderLanguageGateText(tgUser.first_name, false, inferBestLanguage(user, tgUser, text)),
       parse_mode: 'HTML',
       link_preview_options: { is_disabled: true },
       reply_markup: buildLanguageGateKeyboard(null),
@@ -171,7 +172,7 @@ export async function handleIncomingMessage(message) {
       ...(threadId ? { message_thread_id: threadId } : {}),
       text: renderHomeMessage(lang),
       parse_mode: 'HTML',
-      reply_markup: buildHomeKeyboard(lang, cfg.MINI_APP_URL),
+      reply_markup: buildHomeKeyboard(lang),
     });
     return;
   }
@@ -243,7 +244,7 @@ export async function handleIncomingMessage(message) {
     await safeSendMessage({
       chat_id: chatId,
       ...(threadId ? { message_thread_id: threadId } : {}),
-      text: renderApiKeysMessage(engines, cfg.MINI_APP_URL, lang),
+      text: renderApiKeysMessage(engines, lang),
       parse_mode: 'HTML',
       link_preview_options: { is_disabled: true },
       reply_markup: buildSimpleBackKeyboard(lang, admin),
@@ -273,7 +274,7 @@ export async function handleIncomingMessage(message) {
     await safeSendMessage({
       chat_id: chatId,
       ...(threadId ? { message_thread_id: threadId } : {}),
-      text: `${syncBanner}\n\n${renderApiKeysMessage(engines, cfg.MINI_APP_URL, lang)}`,
+      text: `${syncBanner}\n\n${renderApiKeysMessage(engines, lang)}`,
       parse_mode: 'HTML',
       link_preview_options: { is_disabled: true },
       reply_markup: buildSimpleBackKeyboard(lang, true),
@@ -299,32 +300,11 @@ export async function handleIncomingMessage(message) {
     await safeSendMessage({
       chat_id: chatId,
       text: saved.ok
-        ? `${s.lblKeySaved.replace('{key}', saved.key)}\n\n${renderApiKeysMessage(engines, updatedCfg.MINI_APP_URL, lang)}`
-        : renderApiKeysMessage(engines, updatedCfg.MINI_APP_URL, lang),
+        ? `${s.lblKeySaved.replace('{key}', saved.key)}\n\n${renderApiKeysMessage(engines, lang)}`
+        : renderApiKeysMessage(engines, lang),
       parse_mode: 'HTML',
       link_preview_options: { is_disabled: true },
       reply_markup: buildSimpleBackKeyboard(lang, true),
-    });
-    return;
-  }
-
-  const setAppMatch = text.match(/^\/setapp(?:@\w+)?\s+(\S+)$/i);
-  if (setAppMatch) {
-    if (!(await isUserAdmin(tgUser.id, cfg))) {
-      await safeSendMessage({
-        chat_id: chatId,
-        text: s.lblNotAdmin,
-        parse_mode: 'HTML',
-      });
-      return;
-    }
-    await setConfigValue('MINI_APP_URL', setAppMatch[1]);
-    const updatedCfg = await getConfigMap();
-    await safeSendMessage({
-      chat_id: chatId,
-      text: s.lblKeySaved.replace('{key}', 'MINI_APP_URL'),
-      parse_mode: 'HTML',
-      reply_markup: buildHomeKeyboard(lang, updatedCfg.MINI_APP_URL),
     });
     return;
   }
@@ -354,7 +334,7 @@ export async function handleIncomingMessage(message) {
     text: s.lblNoUrlFound,
     parse_mode: 'HTML',
     link_preview_options: { is_disabled: true },
-    reply_markup: buildHomeKeyboard(lang, cfg.MINI_APP_URL),
+    reply_markup: buildHomeKeyboard(lang),
   });
 }
 

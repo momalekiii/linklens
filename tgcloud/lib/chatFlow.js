@@ -115,13 +115,20 @@ export async function executeMultiLinkChatScan({
       await pushLiveView(renderDraftProgressMessage(stageNum, currentUrl, lang, extraHeader));
     };
 
-    const result = await runFullSecurityScan({
-      rawUrl: currentUrl,
-      tgId,
-      spoofAlert: i === 0 ? spoofAlert : null,
-      forceRescan,
-      onStage,
-    });
+    // A failed layer or an unexpected throw must never leave the live message
+    // frozen on a progress stage — always fall through to a rendered outcome.
+    let result;
+    try {
+      result = await runFullSecurityScan({
+        rawUrl: currentUrl,
+        tgId,
+        spoofAlert: i === 0 ? spoofAlert : null,
+        forceRescan,
+        onStage,
+      });
+    } catch (_) {
+      result = { ok: false, error: 'SCAN_FAILED' };
+    }
 
     if (result.ok && result.report) {
       result.report._scanId = result.scanId;
@@ -141,9 +148,13 @@ export async function executeMultiLinkChatScan({
   await editChain;
 
   if (completedScans.length === 0) {
-    const errText = lastError === 'PRIVATE_TARGET' ? s.lblBlockedPrivate : s.lblNoUrlFound;
+    const errText = lastError === 'PRIVATE_TARGET'
+      ? s.lblBlockedPrivate
+      : lastError === 'SCAN_FAILED'
+        ? s.lblScanFailed
+        : s.lblNoUrlFound;
     lastHtmlSent = '';
-    await pushLiveView(errText, buildHomeKeyboard(lang, cfg.MINI_APP_URL));
+    await pushLiveView(errText, buildHomeKeyboard(lang));
     return;
   }
 
@@ -166,7 +177,6 @@ export async function executeMultiLinkChatScan({
     report: primary.report,
     activeTab: 'overview',
     lang,
-    miniAppUrl: cfg.MINI_APP_URL,
     plainSummary,
     siblingScans: siblingMeta,
   });

@@ -219,7 +219,7 @@ export async function ensureMotmaenBashIndex(forceRefresh = false) {
 
   if (!forceRefresh) {
     const sqlHit = await readFeedSqlCache('motmaenbash_v1');
-    if (sqlHit?.fresh && sqlHit.data) {
+    if (sqlHit?.data) {
       raw = sqlHit.data;
       syncedAt = sqlHit.syncedAt;
     }
@@ -324,7 +324,7 @@ export async function ensureLeakfaIndex(forceRefresh = false) {
 
   if (!forceRefresh) {
     const sqlHit = await readFeedSqlCache('leakfa_v1');
-    if (sqlHit?.fresh && sqlHit.data) {
+    if (sqlHit?.data) {
       data = sqlHit.data;
       syncedAt = sqlHit.syncedAt;
     }
@@ -376,7 +376,7 @@ export async function ensureKavehIndex(forceRefresh = false) {
 
   if (!forceRefresh) {
     const sqlHit = await readFeedSqlCache('kaveh_v1');
-    if (sqlHit?.fresh && sqlHit.data) {
+    if (sqlHit?.data) {
       data = sqlHit.data;
       syncedAt = sqlHit.syncedAt;
     }
@@ -438,7 +438,7 @@ export async function ensureHibpIndex(forceRefresh = false) {
 
   if (!forceRefresh) {
     const sqlHit = await readFeedSqlCache('hibp_slim_v1');
-    if (sqlHit?.fresh && sqlHit.data) {
+    if (sqlHit?.data) {
       slim = sqlHit.data;
       syncedAt = sqlHit.syncedAt;
     }
@@ -766,6 +766,12 @@ export async function checkIranianSecurityAndBreaches({
 
   return {
     status: 'ok',
+    sources: {
+      motmaenbash: feedState(mb, mb.urlThreatCount + mb.apkThreatCount),
+      leakfa: feedState(leakfa, leakfa.count),
+      kaveh: feedState(kaveh, kaveh.count),
+      hibp: feedState(hibp, hibp.count),
+    },
     attribution: {
       motmaenbash: 'MotmaenBash Open Dataset (miladnouri/motmaenbash-data • CC-BY-4.0)',
       kaveh: 'Nooshdaroo Kaveh Threat Feed (Nooshdaroo-Code/Kaveh)',
@@ -811,4 +817,9 @@ export async function getIranFeedTelemetry(forceRefresh = false) {
     kavehVersion: kaveh.version,
     hibpBreaches: hibp.count,
   };
+}
+
+function feedState(index, count) {
+  const ageSeconds = Math.max(0, Math.floor(Date.now() / 1000) - Number(index.syncedAt || 0));
+  return { status: count > 0 ? (ageSeconds < FEED_TTL_SECONDS ? 'cached' : 'stale_cache') : 'unavailable', entries: Number(count || 0), syncedAt: index.syncedAt || null, ageSeconds };
 }

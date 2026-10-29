@@ -259,10 +259,10 @@ export function extractLinksFromMessage(message) {
   }
 
   // 4. Hidden / explicit link preview URLs (`link_preview_options` & `external_reply`)
-  if (message.link_preview_options?.url) {
+  if (candidates.length === 0 && message.link_preview_options?.url) {
     candidates.push(cleanCandidateToken(message.link_preview_options.url));
   }
-  if (message.external_reply?.link_preview_options?.url) {
+  if (candidates.length === 0 && message.external_reply?.link_preview_options?.url) {
     candidates.push(cleanCandidateToken(message.external_reply.link_preview_options.url));
   }
 

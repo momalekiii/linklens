@@ -1,6 +1,7 @@
 import { db } from 'sdk';
-import { sql } from 'sdk/db';
+
 import { scanStops } from '../schema.js';
+import { nowSec } from '../lib/clock.js';
 
 // ============================================================================
 // handlers/stopped_message_generation.js — Bot API 10.3 Stop Button Handler
@@ -15,7 +16,7 @@ export default async function (stoppedEvent) {
   const draftKey = `${chatId}:${draftId}`;
   try {
     await db.insert(scanStops)
-      .values({ draftKey, stoppedAt: sql`(unixepoch())` })
+      .values({ draftKey, stoppedAt: nowSec() })
       .onConflictDoNothing({ target: scanStops.draftKey })
       .run();
   } catch (_) {

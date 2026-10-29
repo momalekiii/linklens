@@ -27,21 +27,21 @@ export function buildLanguageGateKeyboard(currentLang = null) {
     inline_keyboard: [
       [
         coloredBtn({
-          text: `${currentLang === 'fa' ? '✓ ' : ''}🇮🇷 فارسی (Persian)`,
+          text: `${currentLang === 'fa' ? '· ' : ''}فارسی`,
           callback_data: 'lang:set:fa',
           style: 'success',
         }),
       ],
       [
         coloredBtn({
-          text: `${currentLang === 'en' ? '✓ ' : ''}🇬🇧 English`,
+          text: `${currentLang === 'en' ? '· ' : ''}English`,
           callback_data: 'lang:set:en',
           style: 'primary',
         }),
       ],
       [
         coloredBtn({
-          text: `${currentLang === 'ru' ? '✓ ' : ''}🇷🇺 Русский (Russian)`,
+          text: `${currentLang === 'ru' ? '· ' : ''}Русский`,
           callback_data: 'lang:set:ru',
           style: 'danger',
         }),
@@ -54,19 +54,9 @@ export function buildLanguageGateKeyboard(currentLang = null) {
 }
 
 // 2. Main LinkLens Security Hub Menu (Includes About Us; Zero Sample Buttons)
-export function buildHomeKeyboard(lang = 'en', miniAppUrl = '') {
+export function buildHomeKeyboard(lang = 'en') {
   const s = t(lang);
   const rows = [];
-
-  if (miniAppUrl && /^https?:\/\//i.test(miniAppUrl)) {
-    rows.push([
-      coloredBtn({
-        text: s.btnOpenMiniApp,
-        web_app: { url: `${miniAppUrl.replace(/\/$/, '')}?lang=${lang}` },
-        style: 'primary',
-      }),
-    ]);
-  }
 
   rows.push([
     coloredBtn({ text: s.btnHistory, callback_data: 'hist:list', style: 'primary' }),
@@ -111,7 +101,6 @@ export function buildScanReportKeyboard({
   report,
   activeTab = 'overview',
   lang = 'en',
-  miniAppUrl = '',
   plainSummary = '',
   siblingScans = null,
 }) {
@@ -124,12 +113,12 @@ export function buildScanReportKeyboard({
     const csvIds = siblingScans.map((x) => x.scanId).join(',');
     const switchBtns = siblingScans.map((item) => {
       const active = Number(item.scanId) === Number(scanId);
-      const ic = item.verdict === 'MALICIOUS' ? '🔴' : item.verdict === 'SUSPICIOUS' ? '🟠' : '🟢';
+      const ic = item.verdict === 'MALICIOUS' ? 'D' : item.verdict === 'SUSPICIOUS' ? 'C' : '·';
       const style = active
         ? 'success'
         : (item.verdict === 'MALICIOUS' || item.verdict === 'SUSPICIOUS' ? 'danger' : 'primary');
       return coloredBtn({
-        text: `${active ? '✓ ' : ''}${ic} ${String(item.domain).slice(0, 16)}`,
+        text: `${active ? '· ' : ''}${String(item.domain).slice(0, 18)}`,
         callback_data: `tab:${item.scanId}:overview:${csvIds}`.slice(0, 64),
         style,
       });
@@ -169,17 +158,6 @@ export function buildScanReportKeyboard({
         text: s.btnOpenLeakfaReport,
         url: report.iran.primaryLeakfaUrl,
         style: 'danger',
-      }),
-    ]);
-  }
-
-  // Open Interactive Report inside Telegram Serverless Mini App
-  if (miniAppUrl && /^https?:\/\//i.test(miniAppUrl) && scanId) {
-    rows.push([
-      coloredBtn({
-        text: s.btnOpenScanInApp,
-        web_app: { url: `${miniAppUrl.replace(/\/$/, '')}?scan=${scanId}&lang=${lang}` },
-        style: 'primary',
       }),
     ]);
   }
@@ -255,8 +233,8 @@ export function buildHistoryKeyboard(historyRows, lang = 'en') {
 
   for (const item of historyRows) {
     const isDanger = item.verdict === 'MALICIOUS' || item.verdict === 'SUSPICIOUS';
-    const icon = item.verdict === 'MALICIOUS' ? '🔴' : item.verdict === 'SUSPICIOUS' ? '🟠' : '🟢';
-    const label = `${icon} [${item.riskScore}/100] ${String(item.domain).slice(0, 26)}`;
+    const tag = item.verdict === 'MALICIOUS' ? 'DANGER' : item.verdict === 'SUSPICIOUS' ? 'CAUTION' : 'CLEAR';
+    const label = `${tag} ${item.riskScore}/100 · ${String(item.domain).slice(0, 22)}`;
     rows.push([
       coloredBtn({
         text: label,
@@ -287,7 +265,7 @@ export function buildSimpleBackKeyboard(lang = 'en', showSyncFeeds = false) {
   if (showSyncFeeds) {
     rows.push([
       coloredBtn({
-        text: lang === 'fa' ? '🔄 همگام‌سازی زنده مطمئن‌باش و لیک‌فا' : lang === 'ru' ? '🔄 Обновить базы угроз и утечек' : '🔄 Sync Live Threat & Breach Feeds',
+        text: lang === 'fa' ? 'همگام‌سازی منابع' : lang === 'ru' ? 'Обновить фиды' : 'Sync feeds',
         callback_data: 'keys:sync',
         style: 'success',
       }),

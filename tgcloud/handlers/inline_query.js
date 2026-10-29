@@ -35,7 +35,7 @@ export default async function (inlineQuery) {
       cache_time: 5,
       results: [],
       button: {
-        text: '🛡 Open LinkLens Scanner',
+        text: 'Open LinkLens scanner',
         start_parameter: 'inline_open',
       },
     }).catch(() => null);
@@ -68,7 +68,7 @@ export default async function (inlineQuery) {
       {
         type: 'article',
         id: `scan_${report.urlHash.slice(0, 24)}`,
-        title: `${s[`verdict_${report.verdict}`]} — ${report.domain} (${report.riskScore}/100)`,
+        title: `${report.limited && isSafe ? s.limitedVerdict : s[`verdict_${report.verdict}`]} — ${report.domain} (${report.riskScore}/100)`,
         description: `Grade ${report.grade} • SSL: ${report.http?.httpsEnforced ? 'HTTPS' : 'HTTP'} • Headers: ${report.http?.headerGrade}`,
         input_message_content: {
           message_text: renderScanReportHtml(report, 'overview', lang),

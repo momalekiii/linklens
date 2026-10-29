@@ -1,7 +1,8 @@
 import { db } from 'sdk';
-import { eq, desc, sql } from 'sdk/db';
+import { eq, desc } from 'sdk/db';
 import { users, scans } from '../schema.js';
 import { isValidLang } from './i18n.js';
+import { nowSec } from './clock.js';
 
 // ============================================================================
 // User Profile, Language Resolution & Scan History Repository
@@ -138,7 +139,7 @@ export async function setUserLanguage(tgId, lang, tgUser = {}) {
         lang,
         langSelected: true,
         prefs: prevPrefs,
-        updatedAt: sql`(unixepoch())`,
+        updatedAt: nowSec(),
       })
       .where(eq(users.tgId, Number(tgId)))
       .returning()
@@ -164,7 +165,7 @@ export async function savePendingScanForNewUser(tgId, url, spoofAlert = null, tg
   };
   try {
     await db.update(users)
-      .set({ prefs, updatedAt: sql`(unixepoch())` })
+      .set({ prefs, updatedAt: nowSec() })
       .where(eq(users.tgId, Number(tgId)))
       .run();
   } catch (_) {
@@ -178,14 +179,19 @@ export async function recordUserScanStats(tgId, isThreat) {
   if (!Number(tgId)) return;
   await ensureDbReady();
   try {
-    await db.update(users)
-      .set({
-        totalScans: sql`${users.totalScans} + 1`,
-        threatsBlocked: isThreat ? sql`${users.threatsBlocked} + 1` : users.threatsBlocked,
-        updatedAt: sql`(unixepoch())`,
-      })
-      .where(eq(users.tgId, Number(tgId)))
-      .run();
+    // Read-modify-write: the DB layer rejects `sql` expressions as bound values,
+    // so counters are computed in JS instead of with `col + 1` arithmetic.
+    const row = await db.select().from(users).where(eq(users.tgId, Number(tgId))).get();
+    if (row) {
+      await db.update(users)
+        .set({
+          totalScans: Number(row.totalScans || 0) + 1,
+          threatsBlocked: Number(row.threatsBlocked || 0) + (isThreat ? 1 : 0),
+          updatedAt: nowSec(),
+        })
+        .where(eq(users.tgId, Number(tgId)))
+        .run();
+    }
   } catch (_) {
     const mem = fallbackUsers.get(Number(tgId));
     if (mem) {
@@ -229,7 +235,7 @@ export async function claimAdminIfNone(tgId, cfg, tgUser = {}) {
       return { ok: false, reason: 'ALREADY_CLAIMED' };
     }
     await db.update(users)
-      .set({ isAdmin: true, updatedAt: sql`(unixepoch())` })
+      .set({ isAdmin: true, updatedAt: nowSec() })
       .where(eq(users.tgId, numericId))
       .run();
     return { ok: true };

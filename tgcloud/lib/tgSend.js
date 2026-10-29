@@ -15,7 +15,9 @@ function downgradeKeyboard(replyMarkup) {
       if (!btn) continue;
       // Drop `copy_text` if rejected and strip non-essential `style`
       if (btn.copy_text) continue;
-      if (btn.web_app && (!btn.web_app.url || !/^https:\/\//i.test(btn.web_app.url))) continue;
+      // MINI APP SURFACE: LinkLens is chat-only. Any web_app button is dropped
+      // outright, so a stale keyboard can never resurrect a webview entry point.
+      if (btn.web_app) continue;
       const copy = { ...btn };
       delete copy.style;
       cleanRow.push(copy);
