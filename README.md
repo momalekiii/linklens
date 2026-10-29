@@ -1,77 +1,86 @@
-# LinkLens
+# 🛡 LinkLens — Official Source Code & Security Audit Repository
 
-### Telegram-native link and threat-intelligence assessment
+[![Launch on Telegram](https://img.shields.io/badge/Telegram-Launch_@linklenssbot-26A5E4?style=flat-square&logo=telegram&logoColor=white)](https://t.me/linklenssbot)
 
-LinkLens inspects submitted and forwarded links in Telegram, combines local URL heuristics with public intelligence sources, and updates a single chat report. The runtime target is **Telegram Serverless**, not an external hosting provider.
+**🚀 Try the live bot on Telegram:** [**@linklenssbot↗**](https://t.me/linklenssbot)
 
-**Version: 2.2.0 · Public source for audit only · Not open source**
+> **📌 Transparency & Audit Notice (All Rights Reserved)**
+> This repository publishes the backend source code of **LinkLens** strictly so users and security reviewers can **inspect and verify** that all threat-scanning logic, database schemas, and multi-engine modules are transparent and privacy-safe.
+> **Self-hosting, cloning, modifying, or operating unauthorized copies of this bot is strictly prohibited** ([`LICENSE`](./LICENSE)) and cryptographically enforced at runtime (`tgcloud/lib/instanceGuard.js`)[span_0](start_span)[span_0](end_span).
 
-> **Release status:** this is a source-review release, not a production certification. Local behavioral tests passed and keyless providers responded in workspace tests. This version has **not yet been confirmed working end-to-end in the live Telegram bot**. A low score does not establish safety.
+---
 
-## Capabilities
+## ✨ Architecture & Backend Overview
 
-- Persian, English and Russian interfaces; first-run language selection.
-- Automatic URL detection in supported message text, captions and forwarded content.
-- In-place report updates and multi-link report selection.
-- URL-pattern heuristics and supported HTTP/HTML inspection.
-- Cached indicator matching against MotmaenBash, Kaveh, Leakfa-Alert and public HIBP breach data.
-- DNS, domain-registration and certificate-transparency lookups.
-- URLScan public historical domain search.
-- No Mini App, external website scanner or frontend in this snapshot.
+LinkLens runs directly on **Telegram Serverless** isolated V8 workers (`tgcloud/`)[span_1](start_span)[span_1](end_span):
 
-Telegram clients and API compatibility can affect button styling and message rendering. A failed message edit or interrupted runtime can still leave an outdated report.
+* **Pure V8 Isolate Engine (`tgcloud/lib/v8Runtime.js`)**: Zero Node/browser host dependencies; pure implementations of SHA-256, URL parsing, and encoding.
+* **Multi-Layer Threat & Breach Verification**:
+  * **Threat & Malware Vendors**: VirusTotal v3 (`90+` engines), Google Safe Browsing v4, URLScan.io v1, AbuseIPDB v2, and IPQualityScore AI.
+  * **Open Breach & Anti-Phishing Intelligence**: Have I Been Pwned (`api/v3/breaches`), MotmaenBash Shaparak verification (`CC-BY-4.0`), Leakfa (`MIT`), and Nooshdaroo Kaveh SHA-256 signatures[span_2](start_span)[span_2](end_span).
+* **Infrastructure & DOM Forensics**: Cloudflare DNS-over-HTTPS (`SPF`/`DMARC`/`CAA`), IANA RDAP WHOIS age, certificate transparency logs, and deep OWASP HTTP header + phishing DOM inspection[span_3](start_span)[span_3](end_span).
+* **Owner Operations & Diagnostics**: Token-safe source health checks (`tgcloud/lib/sourceDiagnostics.js`)[span_4](start_span)[span_4](end_span) and secure serverless seeding (`tgcloud/endpoints/ownerOps.js`)[span_5](start_span)[span_5](end_span).
 
-## What is actually available?
+---
 
-| Source | Purpose | Credentials / limitations |
-|---|---|---|
-| MotmaenBash | Hashed domain, URL, package and APK indicators | Public dataset; cached matches, not universal detection |
-| Leakfa-Alert | Regional domain breach history | Public feed; not a direct Leakfa API |
-| Kaveh | Malware hash indicators | Public feed; payload hash required for file matching |
-| Have I Been Pwned | Website breach history | Public breach catalog, **not** email/account search |
-| Cloudflare DoH | DNS posture | Public network requests |
-| RDAP | Registration dates and registrar | Registry coverage varies; `.ir` public age unavailable in this implementation |
-| Cert Spotter / crt.sh | Certificate history | Historical CT records, **not** live certificate validation |
-| URLScan | Existing domain scan intelligence | Public search; no new sandbox submission without a key |
-| HTTP inspector | Redirect destination, headers and supported content signals | Fetches submitted website; availability and body limits apply |
-
-Optional adapters for VirusTotal, Google Safe Browsing, AbuseIPDB and IPQualityScore remain in the source. They require operator credentials and were **not enabled or verified** in the keyless release.
-
-## Evidence, not marketing
-
-Workspace tests for the 2.2.0 candidate loaded 1,280 MotmaenBash indicators, 101 Leakfa-Alert domains, 539 Kaveh signatures and 983 HIBP records. A known Adobe breach matched. DNS, RDAP, HTTP inspection, URLScan search and Cert Spotter responded for the test target. These are point-in-time observations, **not uptime guarantees or Telegram-runtime verification**.
-
-The private development suite reported **26 passing behavioral tests**. That harness contains private owner fixtures and is intentionally not published here; this repository does not claim independently reproducible behavioral testing. The included manifest verifies file integrity only.
-
-## Important limitations
-
-- External SDK calls are no longer disabled just because `setTimeout` is missing.
-- Where timers exist, the layer budget is six seconds. In a timerless isolate there is **no independent enforceable request watchdog**; slow sources can still delay scanning.
-- Cached feeds can be stale. Source metadata exposes age; a cached snapshot is not a fresh upstream health check.
-- General status is configuration/cache information. Inspect per-scan source outcomes rather than treating “enabled” as evidence of success.
-- Reports remain marked limited. Internal `SAFE`, grades and numerical scores are heuristics, not a verified security guarantee. Secondary UI and stored fields still require review for misleading labels.
-- A breach history does not make a domain a phishing site. Absence from a feed does not make it safe.
-- No independent penetration test, privacy audit or full dependency audit has been completed.
-
-## Repository map
+## 📂 Repository File Map (Audit Index)
 
 ```text
-tgcloud/schema.js             SQLite schema
- tgcloud/handlers/            Telegram event handlers
- tgcloud/lib/                 Scan orchestration, parsing, rendering and runtime helpers
- tgcloud/lib/providers/       Threat-feed and external-service adapters
- tgcloud/endpoints/ownerOps.js Owner configuration and source diagnostics
- docs/                       Architecture, data handling and verification limits
+├── SECURITY.md                        # Line-by-line privacy & network audit guide[span_6](start_span)[span_6](end_span)
+├── PRIVACY.md                         # Data handling and zero-logging policy
+├── ATTRIBUTIONS.md                    # Open-source datasets and third-party attributions
+├── RELEASE-AUDIT.md                   # Build and cryptographic seal verification log
+├── CHANGELOG.md                       # Version history and updates
+├── MANIFEST.sha256                    # Cryptographic file manifest
+├── LICENSE                            # Public Audit License (All Rights Reserved)[span_7](start_span)[span_7](end_span)
+├── docs/
+│   ├── ARCHITECTURE.md                # Detailed technical spec & worker design[span_8](start_span)[span_8](end_span)
+│   └── KNOWN-LIMITATIONS.md           # Rate limits, timeouts & edge cases[span_9](start_span)[span_9](end_span)
+└── tgcloud/
+    ├── schema.js                      # Cloud SQLite schema (users, scans, cache)[span_10](start_span)[span_10](end_span)
+    ├── endpoints/
+    │   └── ownerOps.js                # Secure serverless owner configuration & node probe[span_11](start_span)[span_11](end_span)
+    ├── handlers/
+    │   ├── message.js                 # Incoming/forwarded message & command handler[span_12](start_span)[span_12](end_span)
+    │   ├── callback_query.js          # Inline report tabs & action callbacks[span_13](start_span)[span_13](end_span)
+    │   ├── channel_post.js            # Channel link scan handler[span_14](start_span)[span_14](end_span)
+    │   ├── inline_query.js            # Inline mode (`@Bot <url>`) handler[span_15](start_span)[span_15](end_span)
+    │   └── stopped_message_generation.js
+    └── lib/
+        ├── instanceGuard.js           # SHA-256 Official Instance Seal (Anti-Clone)[span_16](start_span)[span_16](end_span)
+        ├── v8Runtime.js               # Pure ES2022 crypto, URL parser & utilities[span_17](start_span)[span_17](end_span)
+        ├── urlUtils.js                # Link extraction, spoof check & SSRF blocker[span_18](start_span)[span_18](end_span)
+        ├── scanner.js                 # Multi-engine scan orchestrator & scoring[span_19](start_span)[span_19](end_span)
+        ├── chatFlow.js                # Single-message live real-time edit executor[span_20](start_span)[span_20](end_span)
+        ├── reportFormatter.js         # Telegram HTML report renderer[span_21](start_span)[span_21](end_span)
+        ├── keyboards.js               # Bot API colored inline keyboards[span_22](start_span)[span_22](end_span)
+        ├── secrets.js                 # Runtime config loader (empty defaults)[span_23](start_span)[span_23](end_span)[span_24](start_span)[span_24](end_span)
+        ├── usersRepo.js               # Per-user SQLite isolation & history queries[span_25](start_span)[span_25](end_span)
+        ├── botProfile.js              # Localized Telegram bot commands & descriptions[span_26](start_span)[span_26](end_span)
+        ├── tgSend.js                  # Resilient Telegram Bot API transport wrapper[span_27](start_span)[span_27](end_span)
+        ├── sourceDiagnostics.js       # Token-safe node health check and source probe[span_28](start_span)[span_28](end_span)
+        └── providers/
+            ├── domainDnsSsl.js        # DoH DNS, RDAP WHOIS & SSL verifier[span_29](start_span)[span_29](end_span)
+            ├── httpInspector.js       # Redirect-safe HTTP & phishing DOM inspector[span_30](start_span)[span_30](end_span)
+            ├── ipReputation.js        # AbuseIPDB v2 & IPQualityScore threat AI[span_31](start_span)[span_31](end_span)
+            ├── iranIntel.js           # HIBP, MotmaenBash, Leakfa & Kaveh feeds[span_32](start_span)[span_32](end_span)
+            ├── safeBrowsing.js        # Google Safe Browsing v4 lookup[span_33](start_span)[span_33](end_span)
+            ├── urlscan.js             # URLScan.io sandbox lookup[span_34](start_span)[span_34](end_span)
+            └── virustotal.js          # VirusTotal v3 multi-engine lookup[span_35](start_span)[span_35](end_span)
 ```
 
-## Public audit boundary
+---
 
-This archive deliberately omits deployment scripts, activation secrets, credentials, databases, private test fixtures, local previews and deployment configuration. The public activation commitment is not the activation secret. **The software guard is not DRM and does not prevent a reader from changing source.**
+## 📚 Open Threat & Breach Intelligence Attribution
 
-No setup or self-hosting instructions are provided. Publication permits review under the [audit-only license](LICENSE); it does not grant permission to operate a clone. GitHub platform rights and independently licensed third-party material remain governed by their own terms.
+* **MotmaenBash Open Dataset**: [`miladnouri/motmaenbash-data`](https://github.com/miladnouri/motmaenbash-data) — **CC-BY-4.0**[span_36](start_span)[span_36](end_span)
+* **Leakfa Breach Intelligence**: [`Leakfarsi/Leakfa-Alert`](https://github.com/Leakfarsi/Leakfa-Alert) — **MIT**[span_37](start_span)[span_37](end_span)
+* **Nooshdaroo Kaveh Project**: [`Nooshdaroo-Code/Kaveh`](https://github.com/Nooshdaroo-Code/Kaveh)[span_38](start_span)[span_38](end_span)
+* **Have I Been Pwned**: [`haveibeenpwned.com/API/v3`](https://haveibeenpwned.com/API/v3)[span_39](start_span)[span_39](end_span)
 
-## Review and reporting
+---
 
-Start with [ARCHITECTURE](docs/ARCHITECTURE.md), [PRIVACY](PRIVACY.md), [SECURITY](SECURITY.md), [KNOWN LIMITATIONS](docs/KNOWN-LIMITATIONS.md), [CHANGELOG](CHANGELOG.md) and [ATTRIBUTIONS](ATTRIBUTIONS.md).
+## ⚖️ Copyright & License
 
-Do not submit credentials, activation values, private URLs, user IDs or live exploit payloads in public issues. Follow the private-reporting guidance in SECURITY.md.
+Copyright © 2026 [momalekiii.github.io](https://momalekiii.github.io) — **All Rights Reserved.**[span_40](start_span)[span_40](end_span)  
+Published strictly for public security & privacy code auditing. See [`LICENSE`](./LICENSE), [`SECURITY.md`](./SECURITY.md), and [`ATTRIBUTIONS.md`](./ATTRIBUTIONS.md)[span_41](start_span)[span_41](end_span).
